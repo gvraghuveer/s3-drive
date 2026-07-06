@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import api from "./services/api";
 import "./index.css";
+import Header from "./components/Header";
+import UploadBox from "./components/UploadBox";
+import FileList from "./components/FileList";
 
 function App() {
   const [files, setFiles] = useState([]);
@@ -28,24 +31,21 @@ function App() {
   };
 
   const handleFileDelete = async (fileName) => {
-    await api.delete(`/file/${fileName}`, fileName);
+    await api.delete(`/file/${fileName}`);
     await fetchFiles();
   };
 
   return (
-    <div>
-      <h1>S3-Drive</h1>
-
-      {files.map((file) => (
-        <div key={file.name}>
-          <p>{file.name}</p>
-          <button onClick={() => handleFileDelete(file.name)}>Delete</button>
-        </div>
-      ))}
-
-      <input type="file" onChange={handleFileChange} />
-      <p>{selectedFile?.name}</p>
-      <button onClick={handleUpload}> Upload </button>
+    <div className="min-h-screen bg-(--navy)">
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <Header title="S3-Drive" />
+        <UploadBox
+          selectedFile={selectedFile}
+          handleFileChange={handleFileChange}
+          handleUpload={handleUpload}
+        />
+        <FileList files={files} handleDelete={handleFileDelete} />
+      </div>
     </div>
   );
 }
