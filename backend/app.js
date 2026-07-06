@@ -2,7 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import s3 from "./config/s3.js";
-import { ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
+import upload from "./middleware/upload.js";
 
 dotenv.config();
 const PORT = process.env.PORT || 5000;
@@ -39,6 +40,35 @@ app.get("/files", async(req, res) => {
         });
     }
 });
+
+app.post("/upload", upload.single("file"), async (req, res) => {
+    // console.log(req.file);
+    // res.json({
+    //     message: "File received!"
+    // })
+    try{
+        const cmd = new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: req.file.originalname,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype,
+        });
+
+        const response = await s3.send(cmd);
+        res.status(201).json({
+            message: "File uploaded successfully",
+            fileName: req.file.originalname
+        });
+    }
+    catch(error){
+        console.error(error);
+        res.status(500).json({
+            message: "Error uploading file to S3",
+            error: error.message
+        })
+    }
+
+})
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
