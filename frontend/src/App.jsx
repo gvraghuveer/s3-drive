@@ -35,6 +35,11 @@ function App() {
     await fetchFiles();
   };
 
+  const handleDownload = async (fileName) => {
+    const res = await api.get(`/download/${fileName}`);
+    window.open(res.data.url, "_blank");
+  }
+
   return (
     <div className="min-h-screen bg-(--navy)">
       <div className="max-w-5xl mx-auto px-6 py-10">
@@ -44,7 +49,7 @@ function App() {
           handleFileChange={handleFileChange}
           handleUpload={handleUpload}
         />
-        <FileList files={files} handleDelete={handleFileDelete} />
+        <FileList files={files} handleDelete={handleFileDelete} handleDownload={handleDownload} />
       </div>
     </div>
   );

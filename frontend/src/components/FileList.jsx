@@ -1,6 +1,6 @@
 import FileItem from "./FileItem";
 
-function FileList({ files, handleDelete }) {
+function FileList({ files, handleDelete, handleDownload }) {
   return (
     <div className="mt-8">
       <div className="flex items-center gap-3 mb-5">
@@ -25,6 +25,7 @@ function FileList({ files, handleDelete }) {
               key={file.name}
               file={file}
               handleDelete={handleDelete}
+              handleDownload={handleDownload}
             />
           ))
         )}

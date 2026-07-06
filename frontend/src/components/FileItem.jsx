@@ -1,6 +1,6 @@
-import { Trash2, FileText } from "lucide-react";
+import { Trash2, FileText, Download } from "lucide-react";
 
-function FileItem({ file, handleDelete }) {
+function FileItem({ file, handleDelete, handleDownload }) {
   const formatBytes = (bytes) => {
     if (bytes < 1024) return bytes + " B";
 
@@ -27,12 +27,13 @@ function FileItem({ file, handleDelete }) {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => handleDelete(file.name)}
-          className="text-red-500 hover:bg-red-100 p-3 rounded-full transition cursor-pointer"
-        >
-          <Trash2 size={20} />
-        </button>
+        <div>
+            <button onClick={() => handleDownload(file.name)} className="text-red-500 hover:bg-red-100 p-3 rounded-full transition cursor-pointer"><Download size={20} /></button>
+          <button
+            onClick={() => handleDelete(file.name)} className="text-red-500 hover:bg-red-100 p-3 rounded-full transition cursor-pointer">
+            <Trash2 size={20} />
+          </button>
+        </div>
       </div>
     </div>
   );

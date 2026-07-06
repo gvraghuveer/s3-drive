@@ -2,7 +2,13 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import s3 from "./config/s3.js";
-import { DeleteObjectCommand, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import upload from "./middleware/upload.js";
 
 dotenv.config();
@@ -12,85 +18,93 @@ const app = express();
 app.use(cors());
 
 app.get("/", (req, res) => {
-    res.send("S3-Drive Backend running successfully");
+  res.send("S3-Drive Backend running successfully");
 });
 
-app.get("/files", async(req, res) => {
-    try {
-        const cmd = new ListObjectsV2Command({
-            Bucket: process.env.AWS_BUCKET_NAME,
-        });
-        const response = await s3.send(cmd);
-        // res.json(response.Contents);
+app.get("/files", async (req, res) => {
+  try {
+    const cmd = new ListObjectsV2Command({
+      Bucket: process.env.AWS_BUCKET_NAME,
+    });
+    const response = await s3.send(cmd);
+    // res.json(response.Contents);
 
-        const files = (response.Contents || []).map((item) => {
-            return{
-            name: item.Key,
-            size: item.Size,
-            lastModified: item.LastModified
-            };
-        });
-        res.json(files);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            message: "Failed to fetch files",
-            error: error.message,
-        });
-    }
+    const files = (response.Contents || []).map((item) => {
+      return {
+        name: item.Key,
+        size: item.Size,
+        lastModified: item.LastModified,
+      };
+    });
+    res.json(files);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Failed to fetch files",
+      error: error.message,
+    });
+  }
 });
 
 app.post("/upload", upload.single("file"), async (req, res) => {
-    // console.log(req.file);
-    // res.json({
-    //     message: "File received!"
-    // })
-    try{
-        const cmd = new PutObjectCommand({
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: req.file.originalname,
-            Body: req.file.buffer,
-            ContentType: req.file.mimetype,
-        });
+  // console.log(req.file);
+  // res.json({
+  //     message: "File received!"
+  // })
+  try {
+    const cmd = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: req.file.originalname,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+    });
 
-        const response = await s3.send(cmd);
-        res.status(201).json({
-            message: "File uploaded successfully",
-            fileName: req.file.originalname
-        });
-    }
-    catch(error){
-        console.error(error);
-        res.status(500).json({
-            message: "Error uploading file to S3",
-            error: error.message
-        })
-    }
-
-})
+    const response = await s3.send(cmd);
+    res.status(201).json({
+      message: "File uploaded successfully",
+      fileName: req.file.originalname,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error uploading file to S3",
+      error: error.message,
+    });
+  }
+});
 
 app.delete("/file/:key", async (req, res) => {
-    try {
-        const {key} = req.params;
-        const cmd = new DeleteObjectCommand({
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: key
-        })
+  try {
+    const { key } = req.params;
+    const cmd = new DeleteObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+    });
 
-        const response = await s3.send(cmd);
-        res.status(200).json({
-            message: "File deleted successfully",
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            message: "Error deleting file",
-            error: error.message
-        })
-    }
-})
+    const response = await s3.send(cmd);
+    res.status(200).json({
+      message: "File deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error deleting file",
+      error: error.message,
+    });
+  }
+});
+
+app.get("/download/:key", async (req, res) => {
+  const { key } = req.params;
+  const cmd = new GetObjectCommand({
+    Bucket: process.env.AWS_BUCKET_NAME,
+    Key: key,
+  });
+
+  const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 });
+  res.json({url});
+});
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-})
+  console.log(`Server running on port ${PORT}`);
+});
