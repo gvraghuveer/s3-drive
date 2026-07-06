@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import s3 from "./config/s3.js";
-import { ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
 import upload from "./middleware/upload.js";
 
 dotenv.config();
@@ -68,6 +68,27 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         })
     }
 
+})
+
+app.delete("/file/:key", async (req, res) => {
+    try {
+        const {key} = req.params;
+        const cmd = new DeleteObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: key
+        })
+
+        const response = await s3.send(cmd);
+        res.status(200).json({
+            message: "File deleted successfully",
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Error deleting file",
+            error: error.message
+        })
+    }
 })
 
 app.listen(PORT, () => {
