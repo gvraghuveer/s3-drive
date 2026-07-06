@@ -20,7 +20,17 @@ app.get("/files", async(req, res) => {
             Bucket: process.env.AWS_BUCKET_NAME,
         });
         const response = await s3.send(cmd);
-        res.json(response);
+        // res.json(response.Contents);
+
+        const files = (response.Contents || []).map((item) => {
+            return{
+            name: item.Key,
+            size: item.Size,
+            lastModified: item.LastModified
+            };
+        });
+        res.json(files);
+
     } catch (error) {
         console.error(error);
         res.status(500).json({
